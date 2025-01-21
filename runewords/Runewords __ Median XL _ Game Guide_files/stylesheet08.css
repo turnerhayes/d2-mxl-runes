@@ -1,0 +1,13 @@
+/*  Median XL Stylesheet
+    --------------------------------------------------------------
+	Style name:	medianXL		
+	Author: Marco Paulucci
+    --------------------------------------------------------------
+*/
+
+/* Stylesheets
+---------------------------------------- */
+@import url("colors.css");
+@import url("docs08.css");
+
+ul.pageindex li a { display: block; }
