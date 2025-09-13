@@ -10,6 +10,15 @@ export enum CharacterClass {
     Sorceress = "Sorceress",
 }
 
+export const AllCharacterClasses: CharacterClass[] = [
+    CharacterClass.Amazon,
+    CharacterClass.Assassin,
+    CharacterClass.Barbarian,
+    CharacterClass.Druid,
+    CharacterClass.Necromancer,
+    CharacterClass.Sorceress,
+];
+
 export enum DamageElement {
     Cold = "Cold",
     Lightning = "Lightning",
@@ -446,4 +455,5 @@ export interface Runeword {
     itemTypes: ItemType[];
     classRestriction: CharacterClass|null;
     effects: Effect<EffectType>[];
+    fullText: string;
 }

@@ -1,5 +1,10 @@
-import { parse} from "./parse.mjs";
-import { Effect, EffectType, Runeword } from "./parser_types.mjs";
+import { parse} from "./parse";
+import { AllCharacterClasses, CharacterClass, Effect, EffectType, Runeword } from "./parser_types";
+
+
+const local = false;
+
+const RUNEWORDS_URL = local ? "./runewords/index/html" : "/proxy/doc/items/runewords";
 
 const RUNE_FILES: {[runeName: string]: string} = {
     "Vez": "https://docs.median-xl.com/images/runes/xisVex.jpg",
@@ -91,6 +96,7 @@ function getRunewordElement(runeword: Runeword): HTMLElement {
     const container = document.createElement("div");
 
     const nameEl = document.createElement("div");
+    nameEl.style.display = "flex";
     nameEl.appendChild(document.createTextNode(`${runeword.name} `));
     if (runeword.flavorText) {
         const flavorTextEl = document.createElement("span");
@@ -99,6 +105,12 @@ function getRunewordElement(runeword: Runeword): HTMLElement {
         nameEl.appendChild(flavorTextEl);
     }
     nameEl.appendChild(document.createTextNode(`(${runeword.runeword})`));
+
+    const returnToTopLink = document.createElement("a");
+    returnToTopLink.href = "#";
+    returnToTopLink.textContent = "🔝";
+    returnToTopLink.style.marginLeft = "auto";
+    nameEl.appendChild(returnToTopLink);
 
     container.appendChild(nameEl);
 
@@ -167,6 +179,14 @@ function getRunewordElement(runeword: Runeword): HTMLElement {
         effectListEl.appendChild(li);
     }
     container.appendChild(effectListEl);
+    container.appendChild(document.createElement("hr"));
+    const original = document.createElement("div");
+    original.innerHTML = runeword.fullText;
+    const effectsContainer = original.querySelector(".item-level");
+    if (effectsContainer !== null) {
+        original.innerHTML = effectsContainer.innerHTML;
+        container.appendChild(original);
+    }
 
     return container;
 }
@@ -206,18 +226,235 @@ function renderRunewordList(runewords: Runeword[]): void {
 function handleSearchParams(): void {
     const params = new URLSearchParams(location.search);
     console.log("Params:", params);
+
+    const formData = new FormData(); 
+
+    for (const [key, value] of params.entries()) {
+        formData.append(key, value);
+    }
+
+    renderSearchForm(formData);
+    renderFilteredList();
+}
+
+let parsed: Runeword[] = [];
+
+function getFormData(): FormData {
+    const searchForm = document.getElementById("search-form") as HTMLFormElement;
+    return new FormData(searchForm);
+}
+
+function renderFilteredList() {
+    if (parsed.length === 0) {
+        return;
+    }
+    const formData = getFormData();
+    const effectTypes = formData.getAll("effect-type") as EffectType[];
+
+    const filtered = parsed.filter((runeword) => {
+        for (const effect of runeword.effects) {
+            if (effectTypes.includes(effect.type)) {
+                return true;
+            }
+        }
+        return false;
+    });
+    renderRunewordList(filtered);
+}
+
+function createEffectTypeField(effectType: EffectType|null = null): HTMLElement {
+    const effectTypesFieldTemplate = document.getElementById("effect-type-field-template") as HTMLTemplateElement;
+
+    const effectTypesField = effectTypesFieldTemplate.content.cloneNode(true) as HTMLElement;
+    
+    const effectTypeSelectEl = effectTypesField.querySelector(".effect-type-select") as HTMLSelectElement;
+
+    const emptyOption = document.createElement("option");
+    emptyOption.value = "";
+    emptyOption.textContent = "-- Select Effect Type --";
+    effectTypeSelectEl.appendChild(emptyOption);
+    for (const effectTypeOption of Object.values(EffectType)) {
+        if (effectTypeOption === EffectType.Plaintext) {
+            continue;
+        }
+        const option = document.createElement("option");
+        option.value = effectTypeOption;
+        option.textContent = effectTypeOption.split(/(?=[A-Z])/).join(" ");
+        if (effectType === effectTypeOption) {
+            option.selected = true;
+        }
+        effectTypeSelectEl.appendChild(option);
+    }
+
+    effectTypeSelectEl.addEventListener("change", handleEffectTypeChange);
+
+    return effectTypesField;
+}
+
+function createClassSelectField(): HTMLElement {
+    const classSelectTemplate = document.getElementById("effect-field-additions--class");
+    if (classSelectTemplate == null) {
+        throw new Error("Class select template not found");
+    }
+
+    const classSelect = classSelectTemplate.cloneNode(true) as HTMLElement;
+
+    const selectField = classSelect.getElementsByTagName("select")[0] as HTMLSelectElement|undefined;
+    if (selectField == undefined) {
+        throw new Error("Select field not found in class select template");
+    }
+    selectField.name = "class-restriction";
+
+    for (const characterClass of AllCharacterClasses) {
+        const option = document.createElement("option");
+        option.value = characterClass;
+        option.textContent = characterClass;
+        selectField.appendChild(option);
+    }
+
+    return classSelect;
+}
+
+function addConjunctionSelect(
+    parent: HTMLElement,
+    name: string,
+    containerEl: keyof HTMLElementTagNameMap|undefined = undefined
+): void {
+    const conjunctionSelect = document.createElement("select");
+    conjunctionSelect.name = name;
+    const andOption = document.createElement("option");
+    andOption.value = "and";
+    andOption.textContent = "AND";
+    conjunctionSelect.appendChild(andOption);
+    const orOption = document.createElement("option");
+    orOption.value = "or";
+    orOption.textContent = "OR";
+    conjunctionSelect.appendChild(orOption);
+    if (containerEl !== undefined) {
+        const container = document.createElement(containerEl);
+        container.appendChild(conjunctionSelect);
+        parent.appendChild(container);
+    }
+    else {
+        parent.appendChild(conjunctionSelect);
+    }
+}
+
+function handleEffectTypeChange(event: Event): void {
+    const effectContainer = (event.target as HTMLElement).closest(".effect-type-field");
+    const additionalFieldsContainer = effectContainer?.querySelector(".effect-type-additional-fields");
+    if (additionalFieldsContainer == null) {
+        throw new Error("Additional fields container not found");
+    }
+    const select = event.target as HTMLSelectElement;
+    const effectType = select.value as EffectType|"";
+    additionalFieldsContainer.innerHTML = "";
+    if (effectType === "") {
+        return;
+    }
+}
+
+function renderSearchForm(formData: FormData|null = null): void {
+    const formContainer = document.querySelector("#search-form > fieldset");
+
+    if (formContainer == null) {
+        throw new Error("Form container not found");
+    }
+
+    const effectTypesFieldset = document.getElementById("effect-types-fieldset");
+
+    if (effectTypesFieldset == null) {
+        throw new Error("Effect types fieldset not found");
+    }
+
+    effectTypesFieldset.innerHTML = "";
+
+    const effectTypesList = document.createElement("ol");
+    effectTypesList.classList.add("effect-types-list");
+    
+    const addEffectTypeButton = document.createElement("button");
+    addEffectTypeButton.type = "button";
+    addEffectTypeButton.textContent = "+ Add Effect Type";
+    addEffectTypeButton.addEventListener("click", () => {
+        const formData = getFormData();
+        const effectTypes = formData.getAll("effect-type") as (EffectType|"")[];
+        const hasEmpty = effectTypes.some((et) => et === "");
+        if (hasEmpty) {
+            return;
+        }
+        const hasEffectType = effectTypes.some((et) => et !== "");
+        if (hasEffectType) {
+            addConjunctionSelect(effectTypesList, `effect-types-conjunction-${effectTypes.length - 1}`, "li");
+        }
+        const li = document.createElement("li");
+        li.appendChild(createEffectTypeField());
+        effectTypesList.appendChild(li);
+    });
+    effectTypesFieldset.appendChild(addEffectTypeButton);
+
+    effectTypesFieldset.appendChild(effectTypesList);
+
+    const effectTypes = formData != null ? formData.getAll("effect-type") as EffectType[] : [];
+
+    if (effectTypes.length === 0) {
+        const li = document.createElement("li");
+        li.appendChild(createEffectTypeField());
+        effectTypesList.appendChild(li);
+    }
+    else {
+        for (const effectType of effectTypes) {
+            const field = createEffectTypeField(effectType);
+
+            const li = document.createElement("li");
+            li.appendChild(field);
+            effectTypesList.appendChild(li);
+        }
+    }
 }
 
 async function main() {
-    const response = await fetch("./runewords/index.html");
+    const response = await fetch(RUNEWORDS_URL);
     const content = await response.text();
-    const parsed = parse(content);
+    parsed = parse(content);
 
     const searchForm = document.getElementById("search-form") as HTMLFormElement;
 
     searchForm.addEventListener("submit", (event) => {
         event.preventDefault();
         const formData = new FormData(searchForm);
+        const effectTypes = formData.getAll("effect-type");
+
+        if (effectTypes.length > 0) {
+            const removedIndexes: number[] = [];
+            const filteredTypes: EffectType[] = [];
+            effectTypes.forEach((et, index) => {
+                if (et === "") {
+                    removedIndexes.push(index);
+                }
+                else {
+                    filteredTypes.push(et as EffectType);
+                }
+            });
+
+            if (removedIndexes.length > 0) {
+                const magnitudes = formData.getAll("effect-type-magnitude");
+                for (let i = removedIndexes.length - 1; i >= 0; i--) {
+                    const removeIndex = removedIndexes[i];
+                    magnitudes.splice(removeIndex, 1);
+                }
+                formData.delete("effect-type-magnitude");
+                for (const magnitude of magnitudes) {
+                    formData.append("effect-type-magnitude", magnitude as string);
+                }
+            }
+            if (filteredTypes.length < effectTypes.length) {
+                formData.delete("effect-type");
+                for (const filteredType of filteredTypes) {
+                    formData.append("effect-type", filteredType);
+                }
+            } 
+        }
+
         history.pushState({}, "", `?${
             new URLSearchParams(
                 // Typescript doesn't like FormData being passed to
@@ -227,37 +464,19 @@ async function main() {
                 formData as unknown as Record<string, string>
             )
         }`);
-        const effectTypes = formData.getAll("effect-types") as EffectType[];
-        console.log("effectTypes:", effectTypes);
 
-        const filtered = parsed.filter((runeword) => {
-            for (const effect of runeword.effects) {
-                if (effectTypes.includes(effect.type)) {
-                    return true;
-                }
-            }
-            return false;
-        });
-        console.log("filtered:", filtered);
-        renderRunewordList(filtered);
+        renderFilteredList();
     });
 
-    const effectTypeSelectEl = document.getElementById("effect-type-select") as HTMLSelectElement;
-
-    for (const effectType of Object.values(EffectType)) {
-        const option = document.createElement("option");
-        option.value = effectType;
-        option.textContent = effectType.split(/(?=[A-Z])/).join(" ");
-        effectTypeSelectEl.appendChild(option);
+    const formData = getFormData();
+    
+    if (Array.from(formData.values()).length === 0) {
+        renderSearchForm();
+        renderRunewordList(parsed.slice(0, 3));
     }
-
-    handleSearchParams();
-
-    renderRunewordList(parsed.slice(0, 3));
+    else {
+        handleSearchParams();
+    }
 }
 
-main().then(
-    () => {
-        console.log("done");
-    }
-);
+main();

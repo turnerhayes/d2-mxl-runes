@@ -48,7 +48,7 @@ import {
     IgnoreTargetDefenseEffect,
     ReducedCooldownEffect,
     EnhancedDefensePerCharacterLevelEffect,
-} from "./parser_types.mjs";
+} from "./parser_types";
 
 export const CHARACTER_CLASSES_REGEX = new RegExp(Object.values(CharacterClass).join("|"));
 

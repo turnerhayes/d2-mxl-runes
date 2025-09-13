@@ -1,4 +1,4 @@
-import { CHARACTER_CLASSES_REGEX, PARSE_METHODS } from "./parse_methods.mjs";
+import { CHARACTER_CLASSES_REGEX, PARSE_METHODS } from "./parse_methods";
 import {
     CharacterClass,
     Effect,
@@ -8,7 +8,9 @@ import {
     PlaintextEffect,
     Runeword,
     SpecialEffect
-} from "./parser_types.mjs";
+} from "./parser_types";
+
+
 
 export const parse = (
     content: string,
@@ -59,6 +61,7 @@ function parseTableNode(node: Node, doc: Document, ResultType: typeof XPathResul
         itemTypes,
         classRestriction,
         effects,
+        fullText: (node as HTMLElement).innerHTML.trim(),
     };
 }
 

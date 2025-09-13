@@ -4,17 +4,23 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node index.ts",
+    "start": "ts-node ./src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "tsc",
-    "compile:watch": "tsc --watch"
+    "compile": "esbuild src/browser.mts --bundle --outfile=dist/browser.js --minify --sourcemap",
+    "compile:watch": "esbuild src/browser.mts --watch --bundle --outfile=dist/browser.js --minify --sourcemap"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@xmldom/xmldom": "^0.9.6",
+    "express": "^5.1.0",
+    "http-proxy-middleware": "^3.0.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.2",
+    "typescript": "^5.9.2",
     "xpath": "^0.0.34"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "esbuild": "^0.25.9"
   }
 }

@@ -2,7 +2,8 @@
   "compilerOptions": {
     "target": "ES2016",
     "lib": [
-      "DOM"
+      "DOM",
+      "DOM.Iterable"
     ],
     "module": "ES6",
     "sourceMap": true,
@@ -20,5 +21,10 @@
   },
   "files": [
     "src/browser.mts"
-  ]
+  ],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  }
 }

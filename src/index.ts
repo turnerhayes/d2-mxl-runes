@@ -1,10 +1,9 @@
 import path from "node:path";
 import {readFile} from "node:fs/promises";
 import xpath from "xpath";
-import dom from "@xmldom/xmldom";
-import { parse } from "./parse.mts";
+import { DOMParser } from "@xmldom/xmldom";
+import { parse } from "./parse";
 
-const {DOMParser} = dom;
 
 async function main() {
     const pagepath = path.join(".", "runewords", "index.html");
@@ -13,7 +12,7 @@ async function main() {
 
     // console.log("Content:\n\n" + content);
 
-    parse(content, DOMParser, xpath.XPathResult);
+    parse(content, DOMParser as unknown as typeof globalThis.DOMParser, xpath.XPathResult);
 }
 
 main().then(

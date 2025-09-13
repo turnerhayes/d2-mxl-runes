@@ -1,26 +1,20 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <link rel="stylesheet" href="index.css" />
+        <link rel="stylesheet" href="src/css/index.css" />
+        <link rel="stylesheet" href="src/css/search.css" />
+        <link rel="stylesheet" href="https://docs.median-xl.com/styles/docs08.css" />
         <title>Runeword Search</title>
     </head>
     <body>
         <div id="app">
             <div>
                 <form id="search-form">
-                    <input type="text" id="search" name="search-text" placeholder="Search Runewords" />
-                    <div>
-                        <label for="effect-type-select">Effect Types</label>
-                        <select
-                            id="effect-type-select"
-                            multiple
-                            name="effect-types"
-                        >
-                        </select>
-
-                        <label for="magnitude">Magnitude</label>
-                        <input type="number" id="magnitude" />
-                    </div>
+                    <fieldset>
+                        <fieldset id="effect-types-fieldset">
+                            <legend>Effect Types</legend>
+                        </fieldset>
+                    </fieldset>
                     <div>
                         <button type="submit" id="search-submit-button">Search</button>
                     </div>
@@ -30,6 +24,38 @@
             </div>
         </div>
 
-        <script src="dist/browser.mjs" type="module"></script>
+        <template id="effect-type-field-template">
+            <div class="effect-type-field">
+                <label>
+                    Effect Type
+                    <select
+                        class="effect-type-select"
+                        name="effect-type"
+                    >
+                    </select>
+                </label>
+
+                <div class="effect-type-additional-fields">
+                </div>
+            </div>
+        </template>
+
+        <template id="effect-field-additions--class">
+            <label>
+                Class
+                <select multiple name="effect-type-class">
+                </select>
+            </label>
+
+        </template>
+
+        <template id="effect-field-additions--magnitude">
+            <label>
+                Magnitude
+                <input type="text" name="effect-type-magnitude" />
+            </label>
+        </template>
+
+        <script src="dist/browser.js"></script>
     </body>
 </html>
